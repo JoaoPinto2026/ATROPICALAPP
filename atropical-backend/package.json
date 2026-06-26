@@ -1,0 +1,11 @@
+{
+  "name": "atropical-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Backend seguro para a app de viagem A Tropical — guarda as chaves da Optitravel e da Anthropic, nunca expostas ao cliente.",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {}
+}
