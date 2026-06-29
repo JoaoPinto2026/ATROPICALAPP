@@ -5,12 +5,27 @@
 // de acesso (OPTITRAVEL_API_TOKEN) fica só aqui no servidor — nunca é
 // enviada ao telemóvel do cliente.
 
-// PENDENTE: os nomes dos campos abaixo (json.reserva, json.itinerario,
-// json.documentos, json.passageiros, etc.) são suposições — ajustar esta
-// função assim que tivermos um exemplo real de resposta da Optitravel.
-// Esta lógica espelha exatamente mapOptitravelResponse() do ficheiro
-// atropical-viagem-app.jsx — mantém os dois sincronizados se um deles for
-// alterado.
+function normalizeOptitravelCategory(rawCategory) {
+  const s = (rawCategory || "").toLowerCase();
+  if (/avi[aã]o|flight|e-?ticket/.test(s)) return "Voo";
+  if (/comboio|train/.test(s)) return "Comboio";
+  return null;
+}
+
+function classifyServiceText(text) {
+  const s = (text || "").toLowerCase();
+  if (!s.trim()) return null;
+  if (/\b([a-z]{3}\s+){1,4}[a-z]{3}\b.*\d{1,2}\s?(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)/i.test(s)) {
+    return { category: "Voo", title: text.trim() };
+  }
+  if (/estadia|hotel|alojamento|hospedagem/.test(s)) return { category: "Alojamento", title: text.trim() };
+  if (/transfer|traslado/.test(s)) return { category: "Transfer", title: text.trim() };
+  if (/rent.?a.?car|aluguer.*(viatura|carro|autom[oó]vel)/.test(s)) return { category: "Rent-a-Car", title: text.trim() };
+  if (/seguro|apolice|apólice/.test(s)) return { category: "Seguro", title: text.trim() };
+  if (/comboio|train|shinkansen/.test(s)) return { category: "Comboio", title: text.trim() };
+  return null;
+}
+
 function mapOptitravelResponse(json) {
   return {
     destination: json.destino ?? json.destination ?? "Destino",
@@ -33,17 +48,20 @@ function mapOptitravelResponse(json) {
     })),
     documents: (json.documentos ?? json.documents ?? []).map((doc) => {
       const rawCategory = doc.tipo ?? doc.categoria ?? doc.type ?? "";
-      const s = rawCategory.toLowerCase();
-      const knownType = /avi[aã]o|flight|e-?ticket/.test(s) ? "Voo" : /comboio|train/.test(s) ? "Comboio" : null;
+      const knownType = normalizeOptitravelCategory(rawCategory);
+      const serviceText = doc.servico ?? doc.descricaoServico ?? doc.servicoDescricao ?? "";
+      const fileUrl = doc.ficheiroUrl ?? doc.fileUrl ?? null;
+      const fromService = knownType ? null : classifyServiceText(serviceText);
+
       return {
-        type: knownType ?? "Voucher",
-        needsClassification: knownType === null,
-        serviceText: doc.servico ?? doc.descricaoServico ?? doc.servicoDescricao ?? "",
-        title: doc.titulo ?? doc.title ?? "",
+        type: knownType ?? (fileUrl ? "Voucher" : fromService?.category ?? "Voucher"),
+        needsClassification: knownType === null && !!fileUrl,
+        serviceText,
+        title: doc.titulo ?? doc.title ?? (!fileUrl ? fromService?.title : "") ?? "",
         code: doc.codigo ?? doc.code ?? "",
         detail: doc.detalhe ?? doc.detail ?? "",
         icon: doc.icone ?? doc.icon ?? "map",
-        fileUrl: doc.ficheiroUrl ?? doc.fileUrl ?? null,
+        fileUrl,
       };
     }),
     reservaCode: json.reserva?.codigo ?? json.codigoReserva ?? "",
