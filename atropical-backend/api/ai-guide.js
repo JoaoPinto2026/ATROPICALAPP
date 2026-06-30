@@ -45,12 +45,14 @@ Responde APENAS com um array JSON, sem texto antes ou depois, sem markdown. Cada
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1500,
+        max_tokens: 4000,
         messages: [{ role: "user", content: prompt }],
         tools: [{ type: "web_search_20250305", name: "web_search" }],
       }),
     });
     if (!aiRes.ok) {
+      const errBody = await aiRes.text().catch(() => "");
+      console.error("ai-guide: erro da API Anthropic", aiRes.status, errBody);
       return res.status(502).json({ error: `Erro da API Anthropic: ${aiRes.status}` });
     }
     const data = await aiRes.json();
@@ -59,10 +61,17 @@ Responde APENAS com um array JSON, sem texto antes ou depois, sem markdown. Cada
       .join("\n")
       .replace(/```json|```/g, "")
       .trim();
-    const parsed = JSON.parse(text);
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (parseErr) {
+      console.error("ai-guide: falha a interpretar JSON da IA. Texto recebido:", text);
+      throw parseErr;
+    }
     if (!Array.isArray(parsed) || parsed.length === 0) throw new Error("Resposta vazia");
     return res.status(200).json(parsed);
   } catch (err) {
+    console.error("ai-guide: erro inesperado", err);
     return res.status(502).json({ error: "Erro ao processar a resposta da IA." });
   }
 }
