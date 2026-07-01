@@ -1,12 +1,14 @@
 // POST /api/feedback
 // Body: { tripName, reservaCode, passengerName, rating, comment }
 //
-// Guarda o feedback do cliente no Vercel KV (base de dados chave-valor
-// gratuita da Vercel, até 30.000 pedidos/dia). Cada feedback fica
-// guardado com a data/hora, o nome da viagem, o nome do passageiro,
-// a avaliação (1-5 estrelas) e o comentário opcional.
+// Guarda o feedback do cliente no Upstash Redis (base de dados gratuita
+// ligada ao projeto na Vercel). Cada feedback fica guardado com a
+// data/hora, o nome da viagem, o nome do passageiro, a avaliação
+// (1-5 estrelas) e o comentário opcional.
 
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -34,11 +36,11 @@ export default async function handler(req, res) {
   };
 
   try {
-    await kv.set(`feedback:${entry.id}`, JSON.stringify(entry));
-    await kv.lpush("feedback:index", entry.id);
+    await redis.set(`feedback:${entry.id}`, JSON.stringify(entry));
+    await redis.lpush("feedback:index", entry.id);
     return res.status(200).json({ ok: true, id: entry.id });
   } catch (err) {
-    console.error("feedback: erro ao guardar no KV", err);
+    console.error("feedback: erro ao guardar no Redis", err);
     return res.status(502).json({ error: "Erro ao guardar o feedback." });
   }
 }
