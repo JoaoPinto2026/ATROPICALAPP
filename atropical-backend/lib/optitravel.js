@@ -22,6 +22,9 @@ export function classifyServiceText(text) {
   return null;
 }
 
+// PENDENTE: nomes de campo a confirmar quando tivermos um exemplo real de
+// resposta da Optitravel. Espelha mapOptitravelResponse() do ficheiro
+// atropical-viagem-app.jsx — manter os dois sincronizados.
 export function mapOptitravelResponse(json) {
   return {
     destination: json.destino ?? json.destination ?? "Destino",
@@ -66,7 +69,7 @@ export function mapOptitravelResponse(json) {
     support: {
       isGroupTrip: json.reserva?.viagemEmGrupo ?? json.suporte?.viagemEmGrupo ?? false,
       agentName: json.reserva?.criadoPor?.nome ?? json.reserva?.agente?.nome ?? json.suporte?.consultorNome ?? "",
-      agentRole: json.suporte?.consultorCargo ?? "O seu consultor A Tropical",
+      agentRole: json.suporte?.consultorCargo ?? "O seu agente de viagens — A Tropical",
       agentPhone: json.reserva?.criadoPor?.telefone ?? json.reserva?.agente?.telefone ?? json.suporte?.consultorTelefone ?? "",
       agentEmail: json.reserva?.criadoPor?.email ?? json.reserva?.agente?.email ?? json.suporte?.consultorEmail ?? "",
       tourLeaderName: json.suporte?.tourLeaderNome ?? "",
@@ -76,6 +79,9 @@ export function mapOptitravelResponse(json) {
   };
 }
 
+// Vai mesmo à Optitravel buscar e mapear a reserva. Lança erro se a
+// reserva não existir ou se as credenciais não estiverem configuradas —
+// quem chama (login.js / trip.js) decide como tratar isso.
 export async function fetchAndMapTrip(reservaCode) {
   const baseUrl = process.env.OPTITRAVEL_API_BASE_URL;
   const token = process.env.OPTITRAVEL_API_TOKEN;
@@ -90,6 +96,7 @@ export async function fetchAndMapTrip(reservaCode) {
   return mapOptitravelResponse(json);
 }
 
+// Remove acentos para comparação tolerante (ex. "José" == "jose").
 export function normalizeForMatch(s) {
   return (s || "")
     .normalize("NFD")
@@ -98,6 +105,10 @@ export function normalizeForMatch(s) {
     .trim();
 }
 
+// SEGUNDA VERIFICAÇÃO DE LOGIN, agora a sério (do lado do servidor): o nome
+// introduzido tem de corresponder a um dos passageiros do file. Se a lista
+// de passageiros ainda não estiver disponível, não bloqueia o acesso (só o
+// código de reserva conta nesse caso) — mesma regra de sempre.
 export function nameMatchesPassengerList(enteredName, passengers) {
   if (!passengers || passengers.length === 0) return true;
   const enteredWords = normalizeForMatch(enteredName).split(/\s+/).filter(Boolean);
