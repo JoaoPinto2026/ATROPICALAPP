@@ -6,7 +6,7 @@
 // de devolver qualquer dado. Mantém-se aqui apenas como utilidade interna
 // (ex. para a equipa consultar uma reserva), não para uso público direto.
 
-import { fetchAndMapTrip } from "../lib/optitravel";
+import { fetchAndMapTrip } from "../lib/optitravel.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
