@@ -1,6 +1,13 @@
 // POST /api/feedback
-// Body: { tripName, reservaCode, passengerName, rating, comment }
-//
-// Guarda o feedback do cliente no Upstash Redis (base de dados gratuita
-// ligada ao projeto na Vercel). Cada feedback fica guardado com a
-// data/hora, o nome da viagem, o nome do
+// Body: { tripName, reservaCode, passengerName, rating, comment, consentMarketing }
+
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
+
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if
