@@ -12,7 +12,7 @@
 // inseridos incorretos"), quer o problema seja o código, o nome, ou a
 // reserva não existir — para não dar pistas a quem tente adivinhar.
 
-import { fetchAndMapTrip, nameMatchesPassengerList } from "../lib/optitravel";
+import { fetchAndMapTrip, nameMatchesPassengerList } from "../lib/optitravel.js";
 
 const GENERIC_ERROR = "Dados inseridos incorretos.";
 
