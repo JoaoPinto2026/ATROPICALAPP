@@ -4,7 +4,9 @@
 // Protegido por uma chave secreta simples (variável de ambiente
 // FEEDBACK_SECRET) — só a equipa da A Tropical deve saber esta chave.
 
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv();
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -19,21 +21,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const ids = await kv.lrange("feedback:index", 0, 199);
+    const ids = await redis.lrange("feedback:index", 0, 199);
     if (!ids || ids.length === 0) {
       return res.status(200).json([]);
     }
 
     const entries = await Promise.all(
       ids.map(async (id) => {
-        const raw = await kv.get(`feedback:${id}`);
+        const raw = await redis.get(`feedback:${id}`);
         return raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
       })
     );
 
     return res.status(200).json(entries.filter(Boolean));
   } catch (err) {
-    console.error("feedback-list: erro ao ler do KV", err);
+    console.error("feedback-list: erro ao ler do Redis", err);
     return res.status(502).json({ error: "Erro ao ler os feedbacks." });
   }
 }
