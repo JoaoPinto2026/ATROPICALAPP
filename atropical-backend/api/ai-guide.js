@@ -1,5 +1,5 @@
 // POST /api/ai-guide
-// Body: { city, whenLabel }
+// Body: { city, whenLabel, year }
 //
 // Pesquisa na web e sugere atividades culturais, gastronómicas, museus e
 // eventos para a cidade/dia indicados — espelha fetchGuideFromAI() do
@@ -19,17 +19,23 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const { city, whenLabel } = req.body ?? {};
+  const { city, whenLabel, year } = req.body ?? {};
   if (!city) {
     return res.status(400).json({ error: "Falta 'city' no corpo do pedido." });
   }
+  // Ano da viagem, vindo do frontend (extraído de trip.dates). Sem ele,
+  // assume o ano atual do servidor como último recurso — mas o frontend
+  // já devia estar sempre a enviar isto.
+  const tripYear = year || new Date().getFullYear().toString();
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Servidor sem ANTHROPIC_API_KEY configurada." });
   }
 
-  const prompt = `És um especialista em viagens da agência A Tropical. Pesquisa na web e sugere até 6 ideias atualmente relevantes para um cliente em ${city}, no dia ${whenLabel}: atividades culturais, experiências gastronómicas, exposições de museus, e eventos que estejam mesmo a decorrer nessa data.
+  const prompt = `É essencial que uses o ano ${tripYear} nas tuas pesquisas — a viagem deste cliente é em ${tripYear}, não noutro ano. Ao formular pesquisas na web, inclui sempre "${tripYear}" na query (ex. "eventos ${city} ${tripYear}"), e ignora qualquer resultado referente a anos anteriores a ${tripYear}, mesmo que apareça nos resultados de pesquisa.
+
+És um especialista em viagens da agência A Tropical. Pesquisa na web e sugere até 6 ideias atualmente relevantes para um cliente em ${city}, no dia ${whenLabel} de ${tripYear}: atividades culturais, experiências gastronómicas, exposições de museus, e eventos que estejam mesmo a decorrer nessa data.
 
 Na categoria gastronomia, dá prioridade a restaurantes com estrela(s) Michelin em ${city} (verifica no Guia Michelin oficial, guide.michelin.com, quais têm efetivamente estrela nessa cidade — nunca presumas). Se ${city} não tiver restaurantes com estrela Michelin, ou já tiveres esgotado essas opções, sugere outras experiências gastronómicas credíveis da zona.
 
